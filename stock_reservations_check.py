@@ -16,7 +16,6 @@ class StockQuant(models.Model):
                 ('location_id', '=', quant.location_id.id),
                 ('lot_id', '=', quant.lot_id.id),
                 ('package_id', '=', quant.package_id.id),
-                ('owner_id', '=', quant.owner_id.id),
                 ('product_qty', '!=', 0)
             ])
             move_line_ids += move_lines.ids
