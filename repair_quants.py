@@ -4,19 +4,19 @@ from odoo import api, fields, models
 class StockQuant(models.Model):
     _inherit = 'stock.quant'
     
-    def repair_quants(self, product_id):    
+    def repair_quants(self):    
     
-        quants = env["stock.quant"].search([])
+        quants = self.env["stock.quant"].search([])
         move_line_ids = []
         warning = ""
 
         for quant in quants:
-            move_lines = env["stock.move.line"].search([("product_id", "=", quant.product_id.id),
-                                                        ("location_id", "=", quant.location_id.id),
-                                                        ("lot_id", "=", quant.lot_id.id),
-                                                        ("package_id", "=", quant.package_id.id),
-                                                        ("owner_id", "=", quant.owner_id.id),
-                                                        ("product_qty", "!=", 0)])
+            move_lines = self.env["stock.move.line"].search([("product_id", "=", quant.product_id.id),
+                                                             ("location_id", "=", quant.location_id.id),
+                                                             ("lot_id", "=", quant.lot_id.id),
+                                                             ("package_id", "=", quant.package_id.id),
+                                                             ("owner_id", "=", quant.owner_id.id),
+                                                             ("product_qty", "!=", 0)])
 
             move_line_ids += move_lines.ids
             reserved_on_move_lines = sum(move_lines.mapped("product_qty"))
@@ -46,22 +46,22 @@ class StockQuant(models.Model):
                             move_lines.with_context(bypass_reservation_update=True).write({"product_uom_qty": 0})
                             quant.write({"reserved_quantity": 0})
 
-        move_lines = env["stock.move.line"].search([("product_id.type", "=", "product"),
-                                                    ("product_qty", "!=", 0),
-                                                    ("id", "not in", move_line_ids)])
+        move_lines = self.env["stock.move.line"].search([("product_id.type", "=", "product"),
+                                                         ("product_qty", "!=", 0),
+                                                         ("id", "not in", move_line_ids)])
         move_lines_to_unreserve = []
         
         for move_line in move_lines:
             if not move_line.location_id.should_bypass_reservation():
                 move_lines_to_unreserve.append(move_line.id)
         if len(move_lines_to_unreserve) > 1:
-            env.cr.execute(
+            self.env.cr.execute(
                 """ 
                     UPDATE stock_move_line SET product_uom_qty = 0, product_qty = 0 WHERE id in %s ;
                 """
                 % (tuple(move_lines_to_unreserve),))
         elif len(move_lines_to_unreserve) == 1:
-            env.cr.execute(
+            self.env.cr.execute(
                 """ 
                 UPDATE stock_move_line SET product_uom_qty = 0, product_qty = 0 WHERE id = %s ;
                 """
